@@ -1,7 +1,7 @@
 import numpy as np
 import pickle
 
-E1 = 10.0
+E1 = 100.0
 
 
 # phonemes = 'aiyuoOeE°2951@§3j8wpbtdkgfvszSZmnNlRxG-'
@@ -17,12 +17,12 @@ def sortieOfPhoneme(c):
 
 # lettres = 'abcdefghijklmnopqrstuvwxyz:[]'
 # lettres = 'abcdefilmnoprstu[]'
-lettres = 'to'
+lettres = 'to[]'
 nbLettre = 1 #2
 tailleInput = (2*nbLettre+1)*len(lettres)
 tailleCelluleInput = len(lettres)
 
-tailleInter = 10 #30
+tailleInter = 5 #30
 
 
 indexLettres = {}
@@ -74,7 +74,7 @@ class Neurone():
 
 	def miseAJourPoids(self):
 		for a in self.Inputs : 
-			a.w= alpha*a.w+(1-alpha)*epsilon * a.Out.delta*sigmoide(a.In.output)
+			a.w= alpha*a.w+ (1-alpha)*epsilon * a.Out.delta*sigmoide(a.In.output)
 
 	def __repr__(self):
 		return str(sigmoide(self.output))
@@ -110,15 +110,12 @@ class Reseau():
 	def entreeLettre(self,mot,k):
 		self.reinitialise()
 		for i in range(-nbLettre,nbLettre+1):
-			try :
+			if k+i<0 :
+				index = tailleCelluleInput-2
+			elif k+i >= len(mot): 
+				index = tailleCelluleInput-1
+			else : 
 				index = indexLettres[mot[k+i]]
-			except : 
-				if k+i<0 :
-					index = -2
-				elif k+i > len(mot): 
-					index = -1
-				else : 
-					index = 0
 			self.In[tailleCelluleInput*(nbLettre+i)+index].output = E1 
 		pass
 

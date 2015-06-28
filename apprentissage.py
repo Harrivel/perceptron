@@ -17,13 +17,21 @@ print("taille du dico : ", len(dicoFinal))
 # 		R.apprentissage(dicoFinal[k][0], dicoFinal[k][1])
 
 print(dicoFinal[17])
-for i in range(30):
+for i in range(100):
 	print("itération ", i)
 	# R.apprentissage(dicoFinal[17][0], dicoFinal[17][1])
 	R.apprentissage("toto", "to-t")
 
-
-
 with open('ReseauNETtalk.pkl', 'wb') as fichier:
 	pickle.dump(R, fichier, pickle.HIGHEST_PROTOCOL)
+
+
+s = ""
+mot = "toto"
+for k in range(len(mot)):
+	res = R.calcule(mot,k)
+	print(R.Out)
+	s+=R.phonemeOfSortie()
+print(s)
+
 

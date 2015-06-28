@@ -4,7 +4,7 @@ import pickle
 with open('ReseauNETtalk.pkl', 'rb') as fichier:
 	R = pickle.load(fichier)
 
-# R = Reseau()
+R = Reseau()
 
 s = ""
 mot = "toto"
@@ -13,3 +13,4 @@ for k in range(len(mot)):
 	print(R.Out)
 	s+=R.phonemeOfSortie()
 print(s)
+
