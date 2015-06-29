@@ -3,10 +3,9 @@ import pickle
 
 E1 = 100.0
 
-
 # phonemes = 'aiyuoOeE°2951@§3j8wpbtdkgfvszSZmnNlRxG-'
-# phonemes = 'lmnoijkdef§ab8yzut5wp12sOgE@q°R9-'
-phonemes = 'to-'
+phonemes = 'lmnoijkdef§ab8yzut5wp12sOgE@q°R9-'
+# phonemes = 'to-'
 tailleOutput = len(phonemes)
 
 def sortieOfPhoneme(c):
@@ -16,13 +15,13 @@ def sortieOfPhoneme(c):
 	return res
 
 # lettres = 'abcdefghijklmnopqrstuvwxyz:[]'
-# lettres = 'abcdefilmnoprstu[]'
-lettres = 'to[]'
-nbLettre = 1 #2
+lettres = 'abcdefilmnoprstu[]'
+# lettres = 'to[]'
+nbLettre = 2 #2
 tailleInput = (2*nbLettre+1)*len(lettres)
 tailleCelluleInput = len(lettres)
 
-tailleInter = 5 #30
+tailleInter = 80 #30
 
 
 indexLettres = {}
@@ -33,12 +32,12 @@ for i in range(len(lettres)):
 def sigmoide(s):
 	return 1/(1+np.exp(-s))
 
-def diffSigmoide(s):
-	se = sigmoide(s)
+def diffSigmoide(se):
 	return se-se**2
 
 alpha = 0.9
 epsilon = 2.0
+lamb = 0.4
 
 class Axone():
 	"""docstring for Axone"""
@@ -56,28 +55,25 @@ class Neurone():
 		self.output = 0.
 		self.delta = 0.
 
+	# on rajoute n comme input à self
 	def nouveauInput(self,n):
 		self.Inputs.append(Axone(n, self))
 		pass
 
-	def E(self):
+	# OK vérifié : dans output  on a bien sigma(sum_j wij sj)
+	def miseAJourOutput(self):
 		s = 0.
 		for a in self.Inputs : 
-			s+= a.w * sigmoide(a.In.output)
-		self.output = s
-		return s
-
-	def miseAJourOutput(self):
-		self.output = self.E()
+			s+= a.w * a.In.output
+		self.output = sigmoide(s)
 		pass
-
 
 	def miseAJourPoids(self):
 		for a in self.Inputs : 
-			a.w= alpha*a.w+ (1-alpha)*epsilon * a.Out.delta*sigmoide(a.In.output)
+			a.w= alpha*a.w+ (1-alpha)*epsilon * a.Out.delta*a.In.output
 
 	def __repr__(self):
-		return str(sigmoide(self.output))
+		return str(self.output)
 
 class Reseau():
 	"""docstring for Reseau"""
@@ -86,17 +82,21 @@ class Reseau():
 		self.In = [Neurone() for k in range(tailleInput)]
 		self.Out = [Neurone() for k in range(tailleOutput)]
 		self.Inter = [Neurone() for k in range(tailleInter)] # 80
+		print("nombre d'entrées : ", tailleInput)
+		print("nombre d'intermédiaires : ", tailleInter)
+		print("nombre de sorties : ", tailleOutput)
 
+		nbConnexion = 0
 		for n1 in self.In : 
 			for n2 in self.Inter : 
 				n2.nouveauInput(n1)
+				nbConnexion +=1
 		for n1 in self.Inter : 
 			for n2 in self.Out : 
 				n2.nouveauInput(n1)
+				nbConnexion +=1
+		print("nombre de connexions : ", nbConnexion)
 		pass
-
-
-
 
 	def reinitialise(self):
 		for n in self.In : 
@@ -123,8 +123,8 @@ class Reseau():
 		M = sigmoide(self.Out[0].output)
 		iMax = 0
 		for i in range(1,len(self.Out)):
-			if sigmoide(self.Out[i].output) >M:
-				M = sigmoide(self.Out[i].output)
+			if self.Out[i].output >M:
+				M = self.Out[i].output
 				iMax = i
 		return phonemes[iMax]
 
@@ -149,16 +149,18 @@ class Reseau():
 	def apprentissage(self, mot, phonemesVoulus):
 		for k in range(len(mot)):
 			# On calcule à la position k
+			# c'est l'étape 1
 			self.calcule(mot,k)
-			# réinitialisation des delta
-			self.reinitialiseDelta()
 			# calcul de la sortie voulue
 			pVoulu = sortieOfPhoneme(phonemesVoulus[k])
-			# on met à jour le delta de la couche Output et Inter
+			# on met à jour le delta de la couche Output 
+			# on commence par reinitialiser tous les delta à 0 (sauf Out, pas besoin)
+			self.reinitialiseDelta()
 			for i in range(len(self.Out)) : 
 				# Mise à jour du delta de l'Output
-				self.Out[i].delta = (pVoulu[i] - sigmoide(self.Out[i].output))*diffSigmoide(self.Out[i].output)
-				# on met à jour delta Inter
+				# ici la dérivée est selon : s'=1-s^2 car c'est du tanh
+				self.Out[i].delta = (pVoulu[i]-self.Out[i].output )*diffSigmoide(self.Out[i].output)
+				# on met à jour delta Inter 
 				for a in self.Out[i].Inputs : 
 					a.In.delta += self.Out[i].delta * a.w * diffSigmoide(a.In.output)
 			# On met à jour les delta de In
@@ -171,5 +173,16 @@ class Reseau():
 			for n in self.Out : 
 				n.miseAJourPoids()
 		pass
+
+	def erreur(self,data):
+		e = 0.
+		for l in data : 
+			mot = l[0]
+			for k in range(len(mot)):
+				self.calcule(mot,k)
+				pVoulu = sortieOfPhoneme(l[1][k])
+				for i in range(len(self.Out)):
+					e+= (self.Out[i].output-pVoulu[i])**2
+		return e 
 
 
